@@ -1,29 +1,22 @@
-import streamlit
-import time
+import streamlit as st
 from src.lib.lib import get_page_config
+from src.lib.embed import embed_file
+from langchain.chat_models import ChatOpenAI
+
 
 title = "Document-GPT"
 get_page_config(title)
-streamlit.title(title)
+st.title(title)
 
-if 'messages' not in streamlit.session_state:
-    streamlit.session_state['messages'] = []
+file = st.file_uploader(
+  label="분석에 사용할 pdf / txt / docx 파일을 업로드 해주세요",
+  type=["pdf", "txt", "docx"]
+  )
 
+llm = ChatOpenAI(temperature=0.1)
+
+if file:
+  retriever = embed_file(file)
+  docs = retriever.invoke("김첨지는 어떤 사람인가요")
+  st.write(docs)
   
-
-
-def send_message(message, role, isSave=True):
-  with streamlit.chat_message(role):
-    streamlit.write(message)
-    if isSave:
-      streamlit.session_state["messages"].append({"message": message, "role": role})
-    
-for message in streamlit.session_state["messages"]:
-  send_message(message["message"], message["role"], isSave=False)
-
-chat_input = streamlit.chat_input("AI 에게 메시지를 보내보세요.")
-
-if chat_input:
-  send_message(chat_input, "Human")
-  time.sleep(2)
-  send_message(f"You said: {chat_input}", "AI")
