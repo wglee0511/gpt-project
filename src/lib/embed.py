@@ -1,9 +1,14 @@
+
+import streamlit as st
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings, CacheBackedEmbeddings
 from langchain.document_loaders import UnstructuredFileLoader
 from langchain.vectorstores import FAISS
 from langchain.storage import LocalFileStore
+from langchain.callbacks.base import BaseCallbackHandler
+from src.lib.lib import save_massage
 
+@st.cache_data(show_spinner="Embedding data ...")
 def embed_file (file):
   file_content = file.read()
   file_path = f"./.cache/files/{file.name}"
@@ -26,3 +31,18 @@ def embed_file (file):
   vector_store = FAISS.from_documents(docs, cached_embedder)
   retriever = vector_store.as_retriever()
   return retriever
+
+
+class ChatCallbackHandler(BaseCallbackHandler):
+  message = ""
+  
+  def on_llm_start(self, *args, **kwargs):
+    self.message_box = st.empty()
+  
+  def on_llm_end(self, *args, **kwargs):
+    save_massage(self.message, "AI")
+  
+  def on_llm_new_token(self, token: str, *args, **kwargs):
+    self.message += token
+    self.message_box.markdown(self.message)
+    
